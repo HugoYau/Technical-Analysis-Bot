@@ -64,7 +64,20 @@ Run the bot with:
 main.py
 ```
 
-The bot will connect to Discord and start monitoring configured stocks. Notifications will be pushed to the specified Discord channel when patterns are detected.
+**Initializing**
+
+Enter US or HK to track corresponding market. (S&P500 in US and Stock, ETFs, REITs in HK)
+```
+"What is the trading session now? (Enter US/HK)"
+```
+
+Enter Ticker you want to monitored. (NVDA, AAPL, ...)
+```
+"What stock do you want to get announced? (Enter Tickers with , to separate. Enter All to get all announcements.)"
+```
+**Entering All will lead to a huge amount of notification**
+
+Done. The bot will connect to Discord and start monitoring stocks. Notifications will be pushed to the specified Discord channel when patterns are detected.
 
 ---
 
