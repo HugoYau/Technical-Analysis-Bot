@@ -15,8 +15,8 @@ while True:
     for ticker in tickers:
         #checking if there is any signal of Major Trend Reversion
         signal = myfun.MTR_check(stock_data[ticker])
-        bull_signal = signal[0]
-        bear_signal = signal[1]
+        bull_signal = signal[1] #bear reversion implies bull signal
+        bear_signal = signal[0] #bull reversion implies bear signal
         #only send the signal for first time and not sending repeat messages
         if (bull_noti[ticker] != bull_signal) and (bull_signal != ''):
             bull_noti[ticker] = bull_signal
