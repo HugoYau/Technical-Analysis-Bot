@@ -54,7 +54,10 @@ bot_url = 'your-discord-bot-webhook-url'
 
 ## Usage
 
-Get the list of equity from ListofSecurities or scraping online first before usage
+Get the list of equity from ListofSecurities or scraping online first before usage:
+```
+scraping.py
+```
 
 Run the bot with:
 ```
