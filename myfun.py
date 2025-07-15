@@ -1,12 +1,16 @@
 import yfinance as yf
 import datetime
 import pickle
-from scipy.signal import argrelextrema
 import numpy as np
+import pandas as pd
 import requests
 
-#function for update stock data
+#function for updating stock data
 def update_data(tickers):
+    """
+    :param tickers: list (stock ticker list)
+    :return: df (stock data: OLHC and volume)
+    """
     try:
         #get data from yahoo finance
         data = yf.download(tickers, period="3d", interval = '5m', group_by='ticker', threads=True)
@@ -19,102 +23,174 @@ def update_data(tickers):
     except Exception as e:
         print('Data update failed at {}: {}'.format(datetime.datetime.now(), e))
 
-#function for getting data from desired market
-def ask_session():
-    #ask for what market do user want to check
-    session = input("What is the trading session now? (Enter US/HK)")
-    if session == 'US':
-        with open('sp500_tickers.pickle', 'rb') as file:
-            tickers = pickle.load(file)
-            return tickers
-    elif session == 'HK':
-        with open('hk_tickers.pickle', 'rb') as file:
-            tickers = pickle.load(file)
-            return tickers
-    else:
-        print("This is not available.")
-        ask_session()
-
-#function for analyse what stock input
-def ask_stock(stock_list):
+#function for analysing what stock input
+def ask_stock():
+    """
+    :return: list (formatted stock ticker list from user input)
+    """
     ticker_list = []
-    share = input("What stock do you want to get announced? (Enter Tickers with , to separate. Enter All to get all announcements.)")
-    #for market, we will return all the stock in market directly
-    if (share == 'All') & (len(share) == 1):
-        return stock_list
+    share = input("What stock do you want to monitor? (Enter Tickers with , to separate.)")
+    #separate the input to list
+    stocks = [i.strip() for i in share.split(',')]
+    for stock in stocks:
+        #HK tickers are in number and we need to change it to XXXX.HK for yf
+        if stock.isdigit():
+            stock = convert_hk(stock)
+            ticker_list.append(stock)
+        #get components of HSI
+        elif stock == 'HSI':
+            with open('hsi_tickers.pickle','rb') as file:
+                ticker = pickle.load(file)
+            for tick in ticker:
+                ticker_list.append(tick)
+        #get components of S&P 500
+        elif stock == 'US':
+            with open('sp500_tickers.pickle', 'rb') as file:
+                ticker = pickle.load(file)
+            for tick in ticker:
+                ticker_list.append(tick)
+        #get all HK listed stocks, ETFs, REITs
+        elif stock == 'HK':
+            with open('hk_tickers.pickle', 'rb') as file:
+                ticker = pickle.load(file)
+            for tick in ticker:
+                ticker_list.append(tick)
+        else:
+            ticker_list.append(stock)
+    return ticker_list
+
+#function for using what technique
+def ask_method():
+    """
+    :return: str (method of analysis)
+    """
+    #method input until get valid method
+    method = input("What do you want to use to monitor the stock? (MTR or Cross or Both)")
+    if method == "MTR":
+        return "MTR"
+    elif method == "Cross":
+        return "Cross"
+    elif method == "Both":
+        return "All"
     else:
-        #separate the input to list
-        stocks = [i.strip() for i in share.split(',')]
-        for stock in stocks:
-            #HK tickers are in number and we need to change it to XXXX.HK for yf
-            if stock.isdigit():
-                stock = convert_hk(stock)
-                if stock in stock_list:
-                    ticker_list.append(stock)
-                else:
-                    print(stock, 'is not on the list')
-            #US tickers remain unchanged here
-            else:
-                if stock in stock_list:
-                    ticker_list.append(stock)
-                else:
-                    print(stock, 'is not on the list')
-        return ticker_list
+        ask_method()
 
 #function for checking Major Trend Reversion
 def MTR_check(data):
+    """
+    :param data: list (stock data from yfinance)
+    :return: list (time of bull or bear reversion)
+    """
     #get the high and low of each candles
     high = data['High'].values
     low = data['Low'].values
-    #finding extrema among all
-    local_max_index= argrelextrema(high, np.greater, order = 10)[0]
-    local_min_index= argrelextrema(low, np.less, order = 10)[0]
-    #get the value of high/low
-    highs = high[local_max_index]
-    lows = low[local_min_index]
-    #get the time of high/low
-    bull_times = data.index[local_max_index]
-    bear_times = data.index[local_min_index]
+    #get latest 30 candles
+    last_high = high[-30:]
+    last_low = low[-30:]
+    #get the highest and lowest point
+    max_high = np.max(last_high)
+    min_low = np.min(last_low)
+    #get the index of highest and lowest point
+    max_high_index = np.where(last_high == max_high)[0]
+    min_low_index = np.where(last_low == min_low)[0]
+    #only get the latest one to prevent same high or low
+    last_max_high_idx = max_high_index[-1]
+    last_min_low_idx = min_low_index[-1]
+    #get data after max_high and min_low
+    latest_high = last_high[last_max_high_idx + 1:]
+    latest_low = last_low[last_min_low_idx + 1:]
+    #get new high and new low
+    if len(latest_high) > 0:
+        new_high = max(latest_high)
+    else:
+        new_high = None
+    if len(latest_low) > 0:
+        new_low = min(latest_low)
+    else:
+        new_low = None
+    #getting time index of data
+    time_index = len(data) - 30
 
     bull_reversion, bear_reversion = [], []
-    for pt in range(1, len(highs)):
-        #check for lower high
-        current_high = highs[pt]
-        previous_high = highs[pt-1]
+    #compare if there is lower high or higher low
+    if (new_high is not None) and (new_high < max_high):
+        #bull reversion occur
+        bull_time = data.index[time_index + last_max_high_idx + 1]
+        bull_reversion = bull_time.strftime('%Y-%m-%d %H:%M:%S')
 
-        if current_high < previous_high:
-                bull_reversion.append(bull_times[pt].strftime('%Y-%m-%d %H:%M:%S'))
+    if (new_low is not None) and (new_low > min_low):
+        #bull reversion occur
+        bear_time = data.index[time_index + last_min_low_idx + 1]
+        bear_reversion = bear_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    for pt in range(1, len(lows)):
-        #check for higher low
-        current_low = lows[pt]
-        previous_low = lows[pt-1]
+    #return time point detected
+    return bull_reversion, bear_reversion
 
-        if current_low > previous_low:
-                bear_reversion.append(bear_times[pt].strftime('%Y-%m-%d %H:%M:%S'))
+#function for checking golden cross and death cross
+def Cross(data):
+    """
+    :param data: list (stock data)
+    :return: list (bull time and bear time)
+    """
+    #define period for moving average
+    short_term = 5
+    long_term = 20
 
-    #return latest time point detected
-    return bull_reversion[-1:], bear_reversion[-1:]
+    #get data and calculate moving average
+    close = data['Close'].values
+    df = pd.Series(close)
+    short_ma = df.rolling(window = short_term).mean()
+    long_ma = df.rolling(window = long_term).mean()
+
+    #compare for data crossing
+    GoldenX = (short_ma.shift(1) <= long_ma.shift(1)) & (short_ma > long_ma)
+    DeathX = (short_ma.shift(1) >= long_ma.shift(1)) & (short_ma < long_ma)
+
+    #if there is cross, add the time for return
+    if GoldenX.any():
+        golden_index = GoldenX[GoldenX].index.tolist()
+        last_golden = golden_index[-1]
+        bull_time = data.index[last_golden].strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        bull_time = []
+    if DeathX.any():
+        death_index = DeathX[DeathX].index.tolist()
+        last_death = death_index[-1]
+        bear_time = data.index[last_death].strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        bear_time = []
+
+    return bull_time, bear_time
 
 #function for sending notification via discord bot
-def bot_signal(ticker, data, bull = True):
+def bot_signal(ticker, data, method, bull = True):
+    """
+    :param ticker: str (ticker name)
+    :param data: str (time)
+    :param method: str (method of technical analysis)
+    :param bull: bool (bull or bear notice)
+    """
     #discord webhook url
     bot_url = 'your-discord-bot-webhook-url'
     if bull:
-        message = {"content": "{}: Last BULL timing is {}".format(ticker, data)}
+        message = {"content": "{}: Last BULL timing is {} by {}".format(ticker, data, method)}
     else:
-        message = {"content": "{} Last BEAR timing is {}".format(ticker, data)}
+        message = {"content": "{}: Last BEAR timing is {} by {}".format(ticker, data, method)}
 
     #sending message to bot
     response = requests.post(bot_url, json=message)
 
     if response.status_code == 204:
-        print(f"Message sent at {datetime.datetime.now()}")
+        print(f"Message sent at {datetime.datetime.now()}: {message}")
     else:
         print(f"Failed to send message: {response.status_code} - {response.text} at {datetime.datetime.now()}")
 
 #function for changing number into HK stock code for yfinance
 def convert_hk(stock_code):
+    """
+    :param stock_code: int (HK stock number)
+    :return: str (HK stock code for yfinance: XXXX.HK)
+    """
     stock_code = str(stock_code).strip()
     if stock_code.endswith('.HK'):
         return stock_code.upper()
