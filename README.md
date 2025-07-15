@@ -22,7 +22,7 @@ Technical-Analysis-Bot monitors stock price data and detects predefined technica
 
 ## Features
 
-- Detects multiple technical analysis patterns (e.g., MTR and more is coming)  
+- Detects multiple technical analysis patterns (e.g., MTR and Golden Cross and more is coming)  
 - Sends instant alerts to Discord channels  
 - Supports multiple stock tickers simultaneously
 - Designed for educational and research use
@@ -54,7 +54,7 @@ bot_url = 'your-discord-bot-webhook-url'
 
 ## Usage
 
-Get the list of equity from ListOfSecurities or scraping online first before usage:
+Get the list of equity from ListOfSecurities (you can get latest version from HKEX) or scraping online first before usage:
 ```
 scraping.py
 ```
@@ -64,18 +64,24 @@ Run the bot with:
 main.py
 ```
 
+Change the time zone (if you want to) in myfun.py:
+```
+data.index = data.index.tz_convert('Asia/Hong_Kong')
+```
+
 **Initializing**
 
-Enter US or HK to track corresponding market. (S&P500 in US and Stock, ETFs, REITs in HK)
+Enter whatever Ticker available in yahoo finance that you want to monitored. (NVDA, AAPL, ...)
 ```
-"What is the trading session now? (Enter US/HK)"
+"What stock do you want to monitor? (Enter Tickers with , to separate.)"
 ```
+**Enter US for S&P500 components, HSI for HSI components (not up-to-date) and HK for all equity, ETFs, REITs in HKEX**
+**Entering these will lead to a huge amount of notification. DONT Try them unless you want.**
 
-Enter Ticker you want to monitored. (NVDA, AAPL, ...)
+Enter what method you would like to use. (only MTR and Cross available now)
 ```
-"What stock do you want to get announced? (Enter Tickers with , to separate. Enter All to get all announcements.)"
+"What do you want to use to monitor the stock? (MTR or Cross or Both)"
 ```
-**Entering All will lead to a huge amount of notification**
 
 Done. The bot will connect to Discord and start monitoring stocks. Notifications will be pushed to the specified Discord channel when patterns are detected.
 
