@@ -38,28 +38,28 @@ with open('sp500_tickers.pickle', 'wb') as file:
     print("S&P500 Updated")
 
 ##### For Hang Seng Index #####
-# #Method 1: directly reading
-# #link of wikipedia about stocks in S&P500
-# wiki_url = 'https://en.wikipedia.org/wiki/Hang_Seng_Index'
-#
-# #check availability of the website
-# response = requests.get(wiki_url)
-# response.raise_for_status()
-#
-# #get the table (consisting stocks data)
-# table = pd.read_html(response.text)
-# hsi = table[6]
-# #change the ticker to number
-# tickers = hsi['Ticker'].str.replace('SEHK:\xa0', '').tolist() #change the SEHK: to null
-# hkticker = []
-# #change the ticker to XXXX.HK for yfinance
-# for ticker in tickers:
-#     nticker = myfun.convert_hk(ticker)
-#     hkticker.append(nticker)
-#
-# with open('hsi_tickers.pickle', 'wb') as file:
-#     pickle.dump(hkticker, file)
-#     print("HSI Updated")
+#Method 1: directly reading
+#link of wikipedia about stocks in S&P500
+wiki_url = 'https://en.wikipedia.org/wiki/Hang_Seng_Index'
+
+#check availability of the website
+response = requests.get(wiki_url)
+response.raise_for_status()
+
+#get the table (consisting stocks data)
+table = pd.read_html(response.text)
+hsi = table[6]
+#change the ticker to number
+tickers = hsi['Ticker'].str.replace('SEHK:\xa0', '').tolist() #change the SEHK: to null
+hkticker = []
+#change the ticker to XXXX.HK for yfinance
+for ticker in tickers:
+    nticker = myfun.convert_hk(ticker)
+    hkticker.append(nticker)
+
+with open('hsi_tickers.pickle', 'wb') as file:
+    pickle.dump(hkticker, file)
+    print("HSI Updated")
 
 #####  For Hong Kong Listed  #####
 #read the data from our excel with all listed securities in HKEX
