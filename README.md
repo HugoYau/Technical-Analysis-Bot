@@ -76,7 +76,7 @@ Enter whatever Ticker available in yahoo finance that you want to monitored. (NV
 "What stock do you want to monitor? (Enter Tickers with , to separate.)"
 ```
 **Enter US for S&P500 components, HSI for HSI components (not up-to-date) and HK for all equity, ETFs, REITs in HKEX**
-**Entering these will lead to a huge amount of notification. DONT Try them unless you want.**
+**Entering these will lead to a huge amount of notification. DONT try them unless you want.**
 
 Enter what method you would like to use. (only MTR and Cross available now)
 ```
