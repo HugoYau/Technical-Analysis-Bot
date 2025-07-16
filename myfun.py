@@ -104,14 +104,14 @@ def MTR_check(data):
 
     #get last new high and new low
     if len(latest_high) > 0:
-        new_high = argrelextrema(latest_high, np.greater, order = 1)
+        new_high = argrelextrema(latest_high, np.greater, order = 1)[0]
         if len(new_high) > 0:
             new_high = new_high[-1]
     else:
         new_high = None
 
     if len(latest_low) > 0:
-        new_low = argrelextrema(latest_low, np.less, order = 1)
+        new_low = argrelextrema(latest_low, np.less, order = 1)[0]
         if len(new_low) > 0:
             new_low = new_low[-1]
     else:
