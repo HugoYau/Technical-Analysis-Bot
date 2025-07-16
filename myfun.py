@@ -3,6 +3,7 @@ import datetime
 import pickle
 import numpy as np
 import pandas as pd
+from scipy.signal import argrelextrema
 import requests
 
 #function for updating stock data
@@ -81,12 +82,13 @@ def MTR_check(data):
     :param data: list (stock data from yfinance)
     :return: list (time of bull or bear reversion)
     """
-    #get the high and low of each candles
+    #get the high and low of all candles
     high = data['High'].values
     low = data['Low'].values
     #get latest 30 candles
     last_high = high[-30:]
     last_low = low[-30:]
+    
     #get the highest and lowest point
     max_high = np.max(last_high)
     min_low = np.min(last_low)
@@ -99,26 +101,33 @@ def MTR_check(data):
     #get data after max_high and min_low
     latest_high = last_high[last_max_high_idx + 1:]
     latest_low = last_low[last_min_low_idx + 1:]
-    #get new high and new low
+
+    #get last new high and new low
     if len(latest_high) > 0:
         new_high = argrelextrema(latest_high, np.greater, order = 1)
+        if len(new_high) > 0:
+            new_high = new_high[-1]
     else:
         new_high = None
+
     if len(latest_low) > 0:
         new_low = argrelextrema(latest_low, np.less, order = 1)
+        if len(new_low) > 0:
+            new_low = new_low[-1]
     else:
         new_low = None
+
     #getting time index of data
     time_index = len(data) - 30
 
     bull_reversion, bear_reversion = [], []
     #compare if there is lower high or higher low
-    if (new_high is not None) and (new_high < max_high):
+    if (new_high is not None) and np.any(new_high < max_high):
         #bull reversion occur
         bull_time = data.index[time_index + last_max_high_idx + 1]
         bull_reversion = bull_time.strftime('%Y-%m-%d %H:%M:%S')
 
-    if (new_low is not None) and (new_low > min_low):
+    if (new_low is not None) and np.any(new_low > min_low):
         #bull reversion occur
         bear_time = data.index[time_index + last_min_low_idx + 1]
         bear_reversion = bear_time.strftime('%Y-%m-%d %H:%M:%S')
