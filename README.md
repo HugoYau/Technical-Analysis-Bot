@@ -84,6 +84,7 @@ Enter what method you would like to use. (only MTR and Cross available now)
 ```
 
 Done. The bot will connect to Discord and start monitoring stocks. Notifications will be pushed to the specified Discord channel when patterns are detected.
+**Using MTR will return the time when the price is at the recent highest point (Check the pattern after the time). Using Cross will return the time when the cross occur.**
 
 ---
 
