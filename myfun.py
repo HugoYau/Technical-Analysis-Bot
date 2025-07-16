@@ -101,11 +101,11 @@ def MTR_check(data):
     latest_low = last_low[last_min_low_idx + 1:]
     #get new high and new low
     if len(latest_high) > 0:
-        new_high = max(latest_high)
+        new_high = argrelextrema(latest_high, np.greater, order = 1)
     else:
         new_high = None
     if len(latest_low) > 0:
-        new_low = min(latest_low)
+        new_low = argrelextrema(latest_low, np.less, order = 1)
     else:
         new_low = None
     #getting time index of data
